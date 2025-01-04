@@ -1,13 +1,12 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import { db, sql } from "@db";
+import { db } from "@db";
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Add logging middleware
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
@@ -48,8 +47,8 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
 
 (async () => {
   try {
-    // Test database connection
-    await db.execute(sql`SELECT 1`);
+    // Test database connection using a simple query
+    await db.execute('SELECT 1');
     log("Database connection successful");
 
     const server = registerRoutes(app);
