@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { WordCloud } from "./WordCloud";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type Trend = {
   id: number;
@@ -27,49 +26,56 @@ export function TrendAnalysis() {
     <div className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle>Trending Topics</CardTitle>
+          <CardTitle>Trending Topics Visualization</CardTitle>
         </CardHeader>
         <CardContent>
-          <WordCloud words={trends?.map((t) => ({ text: t.content, value: t.frequency }))} />
+          <WordCloud 
+            words={trends?.map((t) => ({ 
+              text: t.content, 
+              value: t.frequency,
+              category: t.type 
+            }))} 
+          />
         </CardContent>
       </Card>
 
-      <Tabs defaultValue="phrases">
-        <TabsList>
-          <TabsTrigger value="phrases">Key Phrases</TabsTrigger>
-          <TabsTrigger value="people">People</TabsTrigger>
-        </TabsList>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Key Phrases</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2">
+              {phrases.map((trend) => (
+                <li key={trend.id} className="flex justify-between items-center p-2 hover:bg-secondary rounded-lg transition-colors">
+                  <span className="font-medium">{trend.content}</span>
+                  <span className="text-sm text-muted-foreground px-2 py-1 bg-secondary rounded-full">
+                    {trend.frequency}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
 
-        <TabsContent value="phrases">
-          <Card>
-            <CardContent className="pt-6">
-              <ul className="space-y-2">
-                {phrases.map((trend) => (
-                  <li key={trend.id} className="flex justify-between items-center">
-                    <span>{trend.content}</span>
-                    <span className="text-muted-foreground">{trend.frequency}</span>
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="people">
-          <Card>
-            <CardContent className="pt-6">
-              <ul className="space-y-2">
-                {people.map((trend) => (
-                  <li key={trend.id} className="flex justify-between items-center">
-                    <span>{trend.content}</span>
-                    <span className="text-muted-foreground">{trend.frequency}</span>
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+        <Card>
+          <CardHeader>
+            <CardTitle>Notable People</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2">
+              {people.map((trend) => (
+                <li key={trend.id} className="flex justify-between items-center p-2 hover:bg-secondary rounded-lg transition-colors">
+                  <span className="font-medium">{trend.content}</span>
+                  <span className="text-sm text-muted-foreground px-2 py-1 bg-secondary rounded-full">
+                    {trend.frequency}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

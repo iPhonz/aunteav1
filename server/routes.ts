@@ -6,6 +6,7 @@ import { desc } from "drizzle-orm";
 import { setupWebSocket } from "./services/websocket.js";
 import { analyzeText } from "./services/anthropic.js";
 import { fetchAndParseFeeds } from "./services/rssParser.js";
+import { updateTrends } from "./services/trends.js";
 
 export function registerRoutes(app: Express): Server {
   const httpServer = createServer(app);
@@ -63,11 +64,20 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Initialize feed fetching
-  const RSS_REFRESH_INTERVAL = 1 * 60 * 1000; // 1 minute for testing
-  setInterval(fetchAndParseFeeds, RSS_REFRESH_INTERVAL);
-  fetchAndParseFeeds().catch(error => {
-    console.error('Initial feed fetch error:', error);
+  // Initialize feed and trend analysis
+  const REFRESH_INTERVAL = 1 * 60 * 1000; // 1 minute for testing
+
+  setInterval(async () => {
+    await fetchAndParseFeeds();
+    await updateTrends();
+  }, REFRESH_INTERVAL);
+
+  // Initial fetch
+  Promise.all([
+    fetchAndParseFeeds(),
+    updateTrends()
+  ]).catch(error => {
+    console.error('Initial data fetch error:', error);
   });
 
   return httpServer;
