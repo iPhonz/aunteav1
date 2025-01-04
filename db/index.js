@@ -8,3 +8,12 @@ if (!process.env.DATABASE_URL) {
 
 const client = postgres(process.env.DATABASE_URL);
 export const db = drizzle(client, { schema });
+
+// Test database connection
+try {
+  await client.query('SELECT 1');
+  console.log('Database connected successfully');
+} catch (error) {
+  console.error('Database connection failed:', error);
+  throw error;
+}

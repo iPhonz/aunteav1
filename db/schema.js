@@ -1,4 +1,5 @@
 import { pgTable, text, serial, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
 export const chatHistory = pgTable("chat_history", {
   id: serial("id").primaryKey(),
@@ -26,3 +27,10 @@ export const trends = pgTable("trends", {
   context: jsonb("context"),
   date: timestamp("date").defaultNow().notNull(),
 });
+
+export const insertChatSchema = createInsertSchema(chatHistory);
+export const selectChatSchema = createSelectSchema(chatHistory);
+export const insertNewsSchema = createInsertSchema(newsArticles);
+export const selectNewsSchema = createSelectSchema(newsArticles);
+export const insertTrendSchema = createInsertSchema(trends);
+export const selectTrendSchema = createSelectSchema(trends);

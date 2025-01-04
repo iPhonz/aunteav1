@@ -22,16 +22,26 @@ Article to analyze:
 ${article.title}
 ${article.content}`;
 
-      const response = await analyzeText(prompt);
-
       try {
-        // Ensure we're working with the message part of the response
+        const response = await analyzeText(prompt);
         const analysisText = response.message;
-        // Find the JSON part of the response
-        const jsonMatch = analysisText.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          const analysis = JSON.parse(jsonMatch[0]);
 
+        // Try to parse the entire response as JSON first
+        let analysis;
+        try {
+          analysis = JSON.parse(analysisText);
+        } catch {
+          // If direct parsing fails, look for JSON in the text
+          const jsonMatch = analysisText.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            analysis = JSON.parse(jsonMatch[0]);
+          } else {
+            console.warn('No valid JSON found in response');
+            continue;
+          }
+        }
+
+        if (analysis) {
           // Insert phrases
           for (const phrase of analysis.phrases || []) {
             await db.insert(trends).values({
@@ -63,7 +73,7 @@ ${article.content}`;
           }
         }
       } catch (error) {
-        console.error('Failed to parse trend analysis:', error);
+        console.error('Failed to analyze article:', article.title, error);
       }
     }
 

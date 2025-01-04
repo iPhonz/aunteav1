@@ -1,9 +1,16 @@
-export default {
+import { defineConfig } from "drizzle-kit";
+
+if (!process.env.DATABASE_URL) {
+  throw new Error("DATABASE_URL must be set. Did you forget to provision a database?");
+}
+
+export default defineConfig({
   schema: "./db/schema.js",
+  out: "./migrations",
   driver: "pg",
   dbCredentials: {
-    connectionString: process.env.DATABASE_URL
+    connectionString: process.env.DATABASE_URL,
   },
   verbose: true,
   strict: true
-};
+});
