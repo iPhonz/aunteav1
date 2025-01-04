@@ -3,10 +3,10 @@ import { createServer, type Server } from "http";
 import { db } from "@db";
 import { chatHistory, newsArticles, trends } from "@db/schema";
 import { desc } from "drizzle-orm";
-import { setupWebSocket } from "./services/websocket.js";
-import { analyzeText } from "./services/anthropic.js";
-import { fetchAndParseFeeds } from "./services/rssParser.js";
-import { updateTrends } from "./services/trends.js";
+import { setupWebSocket } from "./services/websocket";
+import { analyzeText } from "./services/anthropic";
+import { fetchAndParseFeeds } from "./services/rssParser";
+import { updateTrends } from "./services/trends";
 
 export function registerRoutes(app: Express): Server {
   const httpServer = createServer(app);
@@ -20,17 +20,19 @@ export function registerRoutes(app: Express): Server {
       const { message } = req.body;
       const response = await analyzeText(message);
 
-      await db.insert(chatHistory).values({
-        message,
+      // Store user message
+      await db.insert(chatHistory).values([{
+        message: message,
         role: "user",
-      });
+      }]);
 
-      await db.insert(chatHistory).values({
-        message: response,
+      // Store assistant response
+      await db.insert(chatHistory).values([{
+        message: response.message,
         role: "assistant",
-      });
+      }]);
 
-      res.json({ message: response });
+      res.json(response);
     } catch (error) {
       console.error('Chat endpoint error:', error);
       res.status(500).json({ error: "Failed to process chat message" });
@@ -43,7 +45,6 @@ export function registerRoutes(app: Express): Server {
       const articles = await db.select().from(newsArticles)
         .orderBy(desc(newsArticles.publishDate))
         .limit(20);
-      console.log('Fetched articles:', articles.length);
       res.json(articles);
     } catch (error) {
       console.error('News feed error:', error);
