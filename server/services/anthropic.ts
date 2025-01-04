@@ -1,4 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { db } from '@db';
+import { newsArticles } from '@db/schema';
+import { desc } from 'drizzle-orm';
 
 // the newest Anthropic model is "claude-3-5-sonnet-20241022" which was released October 22, 2024
 const anthropic = new Anthropic({
@@ -14,15 +17,39 @@ export async function analyzeText(text: string): Promise<{
   }>;
 }> {
   try {
+    // Fetch recent news articles to provide as context
+    const recentArticles = await db.select()
+      .from(newsArticles)
+      .orderBy(desc(newsArticles.publishDate))
+      .limit(10);
+
+    const articlesContext = recentArticles.map(article => 
+      `Title: ${article.title}\nContent: ${article.content}\nURL: ${article.url}\nDate: ${article.publishDate}`
+    ).join('\n\n');
+
     const message = await anthropic.messages.create({
       max_tokens: 1024,
       messages: [{
         role: 'user',
-        content: `You are AunTea, a friendly and knowledgeable news companion with a warm, approachable personality. You love discussing current events and making complex news topics easy to understand. Your responses should be concise, engaging, and conversational - like chatting with a well-informed friend over tea.
+        content: `You are AunTea, a friendly and knowledgeable news companion with a warm, approachable personality. You have access to the following recent news articles:
 
-Please analyze this news-related query and provide a natural, friendly response with relevant article references: ${text}
+${articlesContext}
 
-Keep your response focused and under 3-4 sentences when possible, using a warm, conversational tone. Include references to news articles that support your response.`
+Using this recent news context, please analyze and respond to this query in a natural, friendly way: ${text}
+
+Format your response as JSON with this structure:
+{
+  "message": "Your conversational response here (keep it concise, 2-3 sentences max)",
+  "references": [
+    {
+      "title": "Referenced article title",
+      "url": "Article URL",
+      "imageUrl": "Image URL if available"
+    }
+  ]
+}
+
+Include only the most relevant articles in your references.`
       }],
       model: 'claude-3-5-sonnet-20241022',
     });
@@ -31,14 +58,35 @@ Keep your response focused and under 3-4 sentences when possible, using a warm, 
     const content = message.content[0];
     if ('text' in content) {
       try {
-        // Try to extract JSON from the response if it contains references
+        // Try to extract JSON from the response
         const jsonMatch = content.text.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
-          return JSON.parse(jsonMatch[0]);
+          const parsed = JSON.parse(jsonMatch[0]);
+          // Ensure references are from our actual articles
+          if (parsed.references) {
+            parsed.references = parsed.references.filter(ref => 
+              recentArticles.some(article => 
+                article.url === ref.url || 
+                article.title === ref.title
+              )
+            ).map(ref => {
+              const matchingArticle = recentArticles.find(article => 
+                article.url === ref.url || 
+                article.title === ref.title
+              );
+              return {
+                ...ref,
+                url: matchingArticle?.url || ref.url,
+                imageUrl: matchingArticle?.imageUrl
+              };
+            });
+          }
+          return parsed;
         }
         // If no JSON found, return just the message
         return { message: content.text };
       } catch (error) {
+        console.error('Failed to parse Claude response:', error);
         // If parsing fails, return just the message
         return { message: content.text };
       }
