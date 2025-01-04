@@ -1,6 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { setupVite, serveStatic } from "./vite";
 import { createServer } from "http";
+import { registerRoutes } from "./routes";
 
 const app = express();
 app.use(express.json());
@@ -20,7 +21,7 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
 });
 
 (async () => {
-  const server = createServer(app);
+  const server = registerRoutes(app);
 
   // Setup vite in development
   if (app.get("env") === "development") {

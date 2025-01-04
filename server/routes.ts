@@ -42,6 +42,7 @@ export function registerRoutes(app: Express): Server {
       const articles = await db.select().from(newsArticles)
         .orderBy(desc(newsArticles.publishDate))
         .limit(20);
+      console.log('Fetched articles:', articles.length);
       res.json(articles);
     } catch (error) {
       console.error('News feed error:', error);
@@ -63,7 +64,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Initialize feed fetching
-  const RSS_REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes
+  const RSS_REFRESH_INTERVAL = 1 * 60 * 1000; // 1 minute for testing
   setInterval(fetchAndParseFeeds, RSS_REFRESH_INTERVAL);
   fetchAndParseFeeds().catch(error => {
     console.error('Initial feed fetch error:', error);
