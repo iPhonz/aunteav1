@@ -30,7 +30,7 @@ export function ChatInterface() {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   // Fetch chat sessions
-  const { data: sessions, isLoading: isLoadingSessions } = useQuery<ChatSession[]>({
+  const { data: sessions, isLoading: isLoadingSessions, refetch: refetchSessions } = useQuery<ChatSession[]>({
     queryKey: ["/api/chat/sessions"],
   });
 
@@ -70,9 +70,13 @@ export function ChatInterface() {
       if (!response.ok) throw new Error("Failed to send message");
       return response.json();
     },
+    onSuccess: () => {
+      setInput("");
+      refetchSessions();
+    },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isPending) return;
 
@@ -87,7 +91,6 @@ export function ChatInterface() {
     } else {
       sendMessage({ message: input, sessionId: activeSession });
     }
-    setInput("");
   };
 
   if (isLoadingSessions) {

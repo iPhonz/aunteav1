@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { db } from "@db";
 import { chatHistory, chatSessions, newsArticles, trends } from "@db/schema";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, asc } from "drizzle-orm";
 import { setupWebSocket } from "./services/websocket";
 import { analyzeText } from "./services/anthropic";
 import { fetchAndParseFeeds } from "./services/rssParser";
@@ -25,7 +25,7 @@ export function registerRoutes(app: Express): Server {
         sessions.map(async (session) => {
           const messages = await db.select().from(chatHistory)
             .where(eq(chatHistory.sessionId, session.id))
-            .orderBy(desc(chatHistory.timestamp));
+            .orderBy(asc(chatHistory.timestamp));
 
           return {
             ...session,
@@ -51,7 +51,12 @@ export function registerRoutes(app: Express): Server {
       const [session] = await db.insert(chatSessions)
         .values({ title })
         .returning();
-      res.json(session);
+
+      // Initialize empty message array for new session
+      res.json({
+        ...session,
+        messages: []
+      });
     } catch (error) {
       console.error('Create session error:', error);
       res.status(500).json({ error: "Failed to create chat session" });
@@ -62,21 +67,24 @@ export function registerRoutes(app: Express): Server {
   app.post("/api/chat", async (req, res) => {
     try {
       const { message, sessionId } = req.body;
-      const response = await analyzeText(message);
 
-      // Store user message
+      // Store user message first
       await db.insert(chatHistory).values({
         sessionId: parseInt(sessionId),
         message: message,
         role: "user",
+        references: null
       });
+
+      // Get AI response
+      const response = await analyzeText(message);
 
       // Store assistant response
       await db.insert(chatHistory).values({
         sessionId: parseInt(sessionId),
         message: response.message,
         role: "assistant",
-        references: response.references,
+        references: response.references || null
       });
 
       // Update session timestamp
@@ -84,7 +92,13 @@ export function registerRoutes(app: Express): Server {
         .set({ updatedAt: new Date() })
         .where(eq(chatSessions.id, parseInt(sessionId)));
 
-      res.json(response);
+      // Return both messages for immediate display
+      res.json({
+        messages: [
+          { role: "user", content: message },
+          { role: "assistant", content: response.message, references: response.references }
+        ]
+      });
     } catch (error) {
       console.error('Chat endpoint error:', error);
       res.status(500).json({ error: "Failed to process chat message" });
