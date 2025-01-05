@@ -43,7 +43,9 @@ export function ChatInterface() {
         body: JSON.stringify({ message }),
       });
       if (!response.ok) throw new Error("Failed to send message");
-      return response.json();
+      const data = await response.json();
+      console.log('Chat Response:', data);
+      return data;
     },
     onSuccess: (data) => {
       setMessages((prev) => [

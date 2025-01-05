@@ -7,6 +7,7 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+// Logging middleware
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
@@ -37,7 +38,7 @@ app.get("/api/health", (_req, res) => {
   res.json({ status: "ok" });
 });
 
-// Error handling middleware
+// Global error handling middleware
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   console.error('Server error:', err);
   const status = err.status || err.statusCode || 500;
@@ -53,6 +54,7 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
 
     const server = registerRoutes(app);
 
+    // Setup Vite or static serving based on environment
     if (app.get("env") === "development") {
       await setupVite(app, server);
     } else {

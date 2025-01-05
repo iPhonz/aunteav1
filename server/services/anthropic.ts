@@ -23,6 +23,11 @@ export async function analyzeText(text: string): Promise<{
       .orderBy(desc(newsArticles.publishDate))
       .limit(10);
 
+    console.log('Recent articles for context:', recentArticles.map(a => ({ 
+      title: a.title, 
+      date: a.publishDate 
+    })));
+
     const articlesContext = recentArticles.map(article => 
       `Title: ${article.title}\nContent: ${article.content}\nURL: ${article.url}\nDate: ${article.publishDate}`
     ).join('\n\n');
@@ -62,6 +67,8 @@ Include only the most relevant articles in your references.`
         const jsonMatch = content.text.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
           const parsed = JSON.parse(jsonMatch[0]);
+          console.log('Parsed Claude response:', parsed);
+
           // Ensure references are from our actual articles
           if (parsed.references) {
             parsed.references = parsed.references.filter(ref => 
@@ -80,9 +87,11 @@ Include only the most relevant articles in your references.`
                 imageUrl: matchingArticle?.imageUrl
               };
             });
+            console.log('Processed references:', parsed.references);
           }
           return parsed;
         }
+        console.log('No JSON found in response, raw text:', content.text);
         // If no JSON found, return just the message
         return { message: content.text };
       } catch (error) {
