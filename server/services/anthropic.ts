@@ -29,32 +29,32 @@ export async function analyzeText(text: string): Promise<{
     })));
 
     const articlesContext = recentArticles.map(article => 
-      `Title: ${article.title}\nContent: ${article.content}\nURL: ${article.url}\nDate: ${article.publishDate}`
-    ).join('\n\n');
+      `ARTICLE:\nTitle: ${article.title}\nContent: ${article.content}\nURL: ${article.url}\nDate: ${article.publishDate}\nImage: ${article.imageUrl || 'None'}\n---\n`
+    ).join('\n');
 
     const message = await anthropic.messages.create({
       max_tokens: 1024,
       messages: [{
         role: 'user',
-        content: `You are AunTea, a friendly and knowledgeable news companion with a warm, approachable personality. You have access to the following recent news articles:
+        content: `You are AunTea, a friendly and knowledgeable news companion with a warm, approachable personality. You speak casually but informatively, like a well-informed friend over tea. Keep your responses concise (2-3 sentences) and always reference the latest news when relevant.
+
+Here are the most recent news articles from the last hour:
 
 ${articlesContext}
 
-Using this recent news context, please analyze and respond to this query in a natural, friendly way: ${text}
+Using this recent news context, please respond to this query in a natural, friendly way: ${text}
 
-Format your response as JSON with this structure:
+Important: Always reference and cite specific articles when they support your response. Format your response as JSON with this structure:
 {
-  "message": "Your conversational response here (keep it concise, 2-3 sentences max)",
+  "message": "Your conversational response here (2-3 sentences max)",
   "references": [
     {
       "title": "Referenced article title",
       "url": "Article URL",
-      "imageUrl": "Image URL if available"
+      "imageUrl": "Image URL from the article"
     }
   ]
-}
-
-Include only the most relevant articles in your references.`
+}`
       }],
       model: 'claude-3-5-sonnet-20241022',
     });

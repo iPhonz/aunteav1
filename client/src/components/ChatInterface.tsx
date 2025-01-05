@@ -109,6 +109,9 @@ export function ChatInterface() {
                             src={ref.imageUrl}
                             alt={ref.title}
                             className="w-20 h-20 object-cover rounded"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                            }}
                           />
                         )}
                         <div className="flex-1 min-w-0">

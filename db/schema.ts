@@ -34,3 +34,11 @@ export const insertNewsSchema = createInsertSchema(newsArticles);
 export const selectNewsSchema = createSelectSchema(newsArticles);
 export const insertTrendSchema = createInsertSchema(trends);
 export const selectTrendSchema = createSelectSchema(trends);
+
+// Export types
+export type InsertChat = typeof chatHistory.$inferInsert;
+export type SelectChat = typeof chatHistory.$inferSelect;
+export type InsertNews = typeof newsArticles.$inferInsert;
+export type SelectNews = typeof newsArticles.$inferSelect;
+export type InsertTrend = typeof trends.$inferInsert;
+export type SelectTrend = typeof trends.$inferSelect;
